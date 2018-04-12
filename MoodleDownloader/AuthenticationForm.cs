@@ -15,6 +15,12 @@ namespace MoodleDownloader
         public AuthenticationForm()
         {
             InitializeComponent();
+            lblBenutzername.Text = "Benutzername:";
+            lblPasswort.Text = "Passwort";
+            bttnSubmit.Text = "send...";
+            this.Text = "MoodleDownloader";
+            groupBox1.Text = "Benutzername und Passwort eingeben:";
+           
         }
 
         private Form1 form1;
@@ -33,5 +39,12 @@ namespace MoodleDownloader
         {
 
         }
+
+        private void AuthenticationForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Environment.Exit(0);
+                
+        }
+
     }
 }

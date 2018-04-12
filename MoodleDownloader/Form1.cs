@@ -33,7 +33,27 @@ namespace MoodleDownloader
             wwc = new WorkWithContent();
             if(wwc.authenticationCheck(username, password))
             {
-                atForm.Close();
+                atForm.Hide();
+
+                wwc.Load_Course();
+                wwc.load_course_files();
+
+                int i = 0;
+                foreach (KeyValuePair<Course, List<CourseFile>> entry in wwc.courseFileDict)
+                {
+
+                    treeVwCourse.Nodes.Add(entry.Key.getCourseName());
+                    if (entry.Value.Count != 0)
+                    {
+                        foreach (CourseFile cf in entry.Value)
+                        {
+
+                            treeVwCourse.Nodes[i].Nodes.Add(cf.getFileName());
+                        }
+                    }
+                    i++;
+
+                }
             } else
             {
                 MessageBox.Show("Benutzername oder Passwort falsch", "Login fehlgeschlagen!", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -42,25 +62,7 @@ namespace MoodleDownloader
         private void Form1_Load(object sender, EventArgs e)
         {
            
-            wwc.Load_Course();
-            wwc.load_course_files();
-
-            int i = 0;
-            foreach (KeyValuePair<Course, List<CourseFile>> entry in wwc.courseFileDict)
-            {
-                
-                treeVwCourse.Nodes.Add(entry.Key.getCourseName());
-                if (entry.Value.Count != 0)
-                {
-                    foreach (CourseFile cf in entry.Value)
-                    {
-
-                        treeVwCourse.Nodes[i].Nodes.Add(cf.getFileName());
-                    }
-                }
-                i++;
-
-            }
+            
         }
 
         private void treeVwCourse_AfterSelect(object sender, TreeViewEventArgs e)
