@@ -77,7 +77,7 @@ namespace MoodleDownloader
                     if (treeVwCourse.SelectedNode.Text.Equals(cf.getFileName()))
                     {
                         
-                        String pdf_file = wwc.downloadPdfintoTmp("https://moodle.htwg-konstanz.de/moodle/pluginfile.php/154363/mod_resource/content/9/Intro.pdf");
+                        String pdf_file = wwc.downloadPdfintoTmp(cf.getFileLink());
 
                         acroReaderShowPdf.LoadFile(pdf_file);
                     }

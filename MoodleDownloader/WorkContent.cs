@@ -93,6 +93,8 @@ namespace MoodleDownloader
         public void Load_Course()
         {
             HtmlAgilityPack.HtmlDocument doc = getHtmlDoc("https://moodle.htwg-konstanz.de/moodle");
+
+
             
 
             HtmlAgilityPack.HtmlNodeCollection htmlNodeColl = doc.DocumentNode.SelectNodes("//div[@id='inst34284']//ul[@class='unlist']//div[@class='column c1']");
@@ -121,12 +123,22 @@ namespace MoodleDownloader
                 HtmlAgilityPack.HtmlDocument doc = getHtmlDoc(courseList[i].getCourseHref());
                 //li[@class='section main clearfix']
                 HtmlAgilityPack.HtmlNodeCollection htmlNodeColl = doc.DocumentNode.SelectNodes("//div[@id='page-content']//ul[@class='topics']//li");
+                HtmlAgilityPack.HtmlNodeCollection htmlNodeColl2 = doc.DocumentNode.SelectNodes("//div[@id='page-content']//ul[@class='topics']//ul");
+
+
+                /*for(int k= 0; k < htmlNodeColl2.Count; k++)
+                { 
+                    var element2 = htmlNodeColl2[k].Descendants("a").First(y => y.Attributes["href"] != null);
+
+                    Console.WriteLine(element2.Attributes["href"].Value);
+                }*/
+
 
                 courseFilesList = new List<CourseFile>();
                 for (int j = 0; j < htmlNodeColl.Count; j++)
                 {
 
-                    var img = htmlNodeColl[j].Descendants("img")
+                    /*var img = htmlNodeColl[j].Descendants("img")
                                             .First(y => y.Attributes["src"] != null);
                     if(img.Attributes["src"].Value.Equals("https://moodle.htwg-konstanz.de/moodle/theme/image.php/_s/htr2018/core/1523028771/f/pdf-24"))
                     {
@@ -140,27 +152,143 @@ namespace MoodleDownloader
                         courseFile.setFileName(instancename.InnerText.Replace("Datei", ""));
                         
                         courseFilesList.Add(courseFile);
+                    }*/
+                    var element = htmlNodeColl[j].Descendants("a")
+                                    .First(y => y.Attributes["onclick"] != null);
+
+                    //var element2 = htmlNodeColl[j].Descendants("a").First(y => y.Attributes["href"] != null);
+
+                    //Console.WriteLine(element.Attributes["href"].Value);
+
+                    if (element.Attributes["onclick"].Value != "")
+                    {
+                        String referenceUrl = getReferenceUrl(element.Attributes["onclick"].Value);
+                        List<String> fileLinks = new List<String>();
+                        fileLinks = getFileLink(referenceUrl);
+                        foreach(String link in fileLinks)
+                        {
+                            
+                            CourseFile cf = new CourseFile();
+                            cf.setFileLink(link);
+                            cf.setFileName(getFileName(link));
+                            courseFilesList.Add(cf);
+                        }  
+                        
                     }
+                    else if (element.Attributes["href"].Value != "" 
+                        && element.Attributes["href"].Value.Contains("folder"))
+                    {
+                        String referenceUrl = getReferenceUrl(element.Attributes["href"].Value);
+                           
+                        
+
+
+                        List<String> fileLinks = new List<String>();
+                        fileLinks = getFileLinkFolder(referenceUrl);
+                       
+                        foreach (String link in fileLinks)
+                        {
+
+                            
+                            
+                            if(!courseFilesList.Exists( x=>x.getFileName() == getFileName(link)))
+                            {
+                                CourseFile cf = new CourseFile();
+                                cf.setFileLink(link);
+                                cf.setFileName(getFileName(link));
+                                courseFilesList.Add(cf);
+                            }
+                                
+                        }
+                    }
+
                 }
                 courseFileDict.Add(courseList[i], courseFilesList);
 
             }
         }
 
+        
+        private List<String> getFileLinkFolder(String referenceUrl)
+        {
+            List<String> fileLinks = new List<string>();
+            HtmlAgilityPack.HtmlDocument doc = getHtmlDoc(referenceUrl);
+            HtmlAgilityPack.HtmlNodeCollection htmlNodeColl = doc.DocumentNode.SelectNodes("//section[@id='region-main']//div[@id='folder_tree0']//span[@class='fp-filename-icon']");
+            for(int i = 0; i < htmlNodeColl.Count; i++)
+            {
+                var element = htmlNodeColl[i].Descendants("a")
+                                                 .First(y => y.Attributes["href"] != null);
+               
+                String value = element.Attributes["href"].Value;
+
+                
+                int indexOfChar = value.IndexOf("?")  ;
+                int removeCount = (value.Length) - indexOfChar;
+                String url = value.Remove(indexOfChar, removeCount);
+
+                
+
+                if (url.EndsWith(".pdf"))
+                {
+                    fileLinks.Add(url);
+                }
+            }
+            return fileLinks;
+        }
+
+        private List<String> getFileLink(String referenceUrl)
+        {
+            HtmlAgilityPack.HtmlDocument doc = getHtmlDoc(referenceUrl);
+            HtmlAgilityPack.HtmlNodeCollection htmlNodeColl = doc.DocumentNode.SelectNodes("//div[@id='page-content']");
+            List<String> fileLinks = new List<string>();
+            for (int j = 0; j < htmlNodeColl.Count; j++)
+            {
+                var element = htmlNodeColl[j].Descendants("a")
+                                                 .First(y => y.Attributes["href"] != null);
+                String value = element.Attributes["href"].Value;
+                if (value.EndsWith(".pdf"))
+                {
+                    fileLinks.Add(value);
+                }
+
+            }
+
+            return fileLinks;
+        }
+
+        private String getReferenceUrl(String value)
+        {
+            String url = String.Empty;
+            if(!value.Contains("folder"))
+            { 
+                String beginOfLink = value.Remove(0, 18);
+
+                int indexOfChar = beginOfLink.IndexOf(";") - 1;
+                int removeCount = (beginOfLink.Length - 1) - indexOfChar;
+                url = beginOfLink.Remove(indexOfChar, removeCount);           //.Remove(indexOfChar, beginOfLink.Length - 1);
+            } else
+            {
+                url = value;
+            }
+
+            return url;
+        }
+
         public String downloadPdfintoTmp(String url)
         {
-            request = (HttpWebRequest)WebRequest.Create(url);
-            request.CookieContainer = container;
+            String filepath = tmp_path + getFileName(url);
+            if (!File.Exists(filepath))
+            {
+                request = (HttpWebRequest)WebRequest.Create(url);
+                request.CookieContainer = container;
 
-            response = request.GetResponse();
-
-
-            
-
-            
-            
-            return tmp_path + CreatePDF(url, response, tmp_path);
-
+                response = request.GetResponse();
+                return tmp_path + CreatePDF(url, response, tmp_path);
+            }
+              else
+            {
+                return filepath;
+            }
         }
 
         private static String CreatePDF(String url, WebResponse response, String storagePath)
