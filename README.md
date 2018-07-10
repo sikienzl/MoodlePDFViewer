@@ -2,4 +2,4 @@
 
 For this project you need the AcroPDFLib and the AxAcroPDFLib. 
 
-All rights to the libraries are owned by Adobe Systems 
+All rights to these libraries are owned by Adobe Systems 
