@@ -144,11 +144,13 @@ namespace MoodleDownloader
                             fileLinks = getFileLink(referenceUrl);
                             foreach (String link in fileLinks)
                             {
-
-                                CourseFile cf = new CourseFile();
-                                cf.setFileLink(link);
-                                cf.setFileName(getFileName(link));
-                                courseFilesList.Add(cf);
+                                if (!courseFilesList.Exists(x => x.getFileName() == getFileName(link)))
+                                {
+                                    CourseFile cf = new CourseFile();
+                                    cf.setFileLink(link);
+                                    cf.setFileName(getFileName(link));
+                                    courseFilesList.Add(cf);
+                                }
                             }
 
                         }
