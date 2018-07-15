@@ -191,13 +191,22 @@ namespace MoodleDownloader
                                    
                                     if (referenceUrl.Contains("resource"))
                                     {
-                                        if (!courseFilesList.Exists(x => x.getFileName() == getFileName(referenceUrl)))
+                                        HttpWebRequest request2 = (HttpWebRequest)WebRequest.Create(referenceUrl);
+                                        request2.CookieContainer = container;
+                                        WebResponse response2 = request2.GetResponse();
+                                        Uri responseUrl = response2.ResponseUri;
+                                        response2.Close();
+                                        String responseUrlString = responseUrl.ToString();
+                                        
+                                        if (!courseFilesList.Exists(x => x.getFileName() == getFileName(responseUrlString)))
                                         {
-
-                                            CourseFile cf = new CourseFile();
-                                            cf.setFileLink(referenceUrl);
-                                            cf.setFileName(getFileName(referenceUrl));
-                                            courseFilesList.Add(cf);
+                                            if (getFileName(responseUrlString).EndsWith(".pdf"))
+                                            {
+                                                CourseFile cf = new CourseFile();
+                                                cf.setFileLink(responseUrlString);
+                                                cf.setFileName(getFileName(responseUrlString));
+                                                courseFilesList.Add(cf);
+                                            }
                                         }
                                     }
                                 }
@@ -329,11 +338,7 @@ namespace MoodleDownloader
             int pos = url.LastIndexOf("/") + 1;
             filename = url.Substring(pos, url.Length - pos);
            
-            if (filename.Contains("view.php?id="))
-            {
-                filename = filename.Remove(0, 12);
-                filename += ".pdf";
-            }
+            
             return filename;
         }
 
