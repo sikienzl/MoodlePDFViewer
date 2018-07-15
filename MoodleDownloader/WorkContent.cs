@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace MoodleDownloader
 {
@@ -123,88 +124,100 @@ namespace MoodleDownloader
                 HtmlAgilityPack.HtmlDocument doc = getHtmlDoc(courseList[i].getCourseHref());
                 //li[@class='section main clearfix']
                 HtmlAgilityPack.HtmlNodeCollection htmlNodeColl = doc.DocumentNode.SelectNodes("//div[@id='page-content']//ul[@class='topics']//li");
-                HtmlAgilityPack.HtmlNodeCollection htmlNodeColl2 = doc.DocumentNode.SelectNodes("//div[@id='page-content']//ul[@class='topics']//ul");
+                //HtmlAgilityPack.HtmlNodeCollection htmlNodeColl2 = doc.DocumentNode.SelectNodes("//div[@id='page-content']//ul[@class='topics']//ul");
 
 
-                /*for(int k= 0; k < htmlNodeColl2.Count; k++)
-                { 
-                    var element2 = htmlNodeColl2[k].Descendants("a").First(y => y.Attributes["href"] != null);
-
-                    Console.WriteLine(element2.Attributes["href"].Value);
-                }*/
 
 
                 courseFilesList = new List<CourseFile>();
                 for (int j = 0; j < htmlNodeColl.Count; j++)
                 {
+                    
 
-                    /*var img = htmlNodeColl[j].Descendants("img")
-                                            .First(y => y.Attributes["src"] != null);
-                    if(img.Attributes["src"].Value.Equals("https://moodle.htwg-konstanz.de/moodle/theme/image.php/_s/htr2018/core/1523028771/f/pdf-24"))
+                    if(htmlNodeColl[j].Descendants("a").Any(y => y.Attributes["onclick"] != null))
                     {
-                        CourseFile courseFile = new CourseFile();
-                        var filelink = htmlNodeColl[j].Descendants("a")
-                                                      .First(y => y.Attributes["href"] != null);
-                        //Console.WriteLine(filelink.Attributes["href"].Value);
-                        courseFile.setFileLink(filelink.Attributes["href"].Value);
-                        var instancename = htmlNodeColl[j].Descendants("span")
-                                          .First(x => x.Attributes["class"] != null);
-                        courseFile.setFileName(instancename.InnerText.Replace("Datei", ""));
-                        
-                        courseFilesList.Add(courseFile);
-                    }*/
-                    var element = htmlNodeColl[j].Descendants("a")
-                                    .First(y => y.Attributes["onclick"] != null);
-
-                    //var element2 = htmlNodeColl[j].Descendants("a").First(y => y.Attributes["href"] != null);
-
-                    //Console.WriteLine(element.Attributes["href"].Value);
-
-                    if (element.Attributes["onclick"].Value != "")
-                    {
-                        String referenceUrl = getReferenceUrl(element.Attributes["onclick"].Value);
-                        List<String> fileLinks = new List<String>();
-                        fileLinks = getFileLink(referenceUrl);
-                        foreach(String link in fileLinks)
+                        var element = htmlNodeColl[j].Descendants("a").First(y => y.Attributes["onclick"] != null);
+                        if (element.Attributes["onclick"].Value != "")
                         {
-                            
-                            CourseFile cf = new CourseFile();
-                            cf.setFileLink(link);
-                            cf.setFileName(getFileName(link));
-                            courseFilesList.Add(cf);
-                        }  
-                        
-                    }
-                    else if (element.Attributes["href"].Value != "" 
-                        && element.Attributes["href"].Value.Contains("folder"))
-                    {
-                        String referenceUrl = getReferenceUrl(element.Attributes["href"].Value);
-                           
-                        
-
-
-                        List<String> fileLinks = new List<String>();
-                        fileLinks = getFileLinkFolder(referenceUrl);
-                       
-                        foreach (String link in fileLinks)
-                        {
-
-                            
-                            
-                            if(!courseFilesList.Exists( x=>x.getFileName() == getFileName(link)))
+                            String referenceUrl = getReferenceUrl(element.Attributes["onclick"].Value);
+                            List<String> fileLinks = new List<String>();
+                            fileLinks = getFileLink(referenceUrl);
+                            foreach (String link in fileLinks)
                             {
+
                                 CourseFile cf = new CourseFile();
                                 cf.setFileLink(link);
                                 cf.setFileName(getFileName(link));
                                 courseFilesList.Add(cf);
                             }
-                                
+
                         }
+                        else if (element.Attributes["href"].Value != ""
+                            && element.Attributes["href"].Value.Contains("folder"))
+                        {
+                            String referenceUrl = getReferenceUrl(element.Attributes["href"].Value);
+
+
+
+
+                            List<String> fileLinks = new List<String>();
+                            fileLinks = getFileLinkFolder(referenceUrl);
+
+                            foreach (String link in fileLinks)
+                            {
+                                if (!courseFilesList.Exists(x => x.getFileName() == getFileName(link)))
+                                {
+                                    CourseFile cf = new CourseFile();
+                                    cf.setFileLink(link);
+                                    cf.setFileName(getFileName(link));
+                                    courseFilesList.Add(cf);
+                                }
+
+                            }
+                        }
+                    } else
+                    {
+                        HtmlAgilityPack.HtmlNodeCollection htmlNodeColl2 = doc.DocumentNode.SelectNodes("//div[@id='page-content']//ul[@class='topics']//li");
+                        
+
+                        for (int k = 0; k < htmlNodeColl2.Count(); k++)
+                        {
+                            if(htmlNodeColl[k].Descendants("a").Any(y => y.Attributes["href"] != null))
+                            { 
+                                var element = htmlNodeColl[k].Descendants("a").First(y => y.Attributes["href"] != null);
+                                if (element.Attributes["href"].Value != "")
+                                {
+                                    String referenceUrl = element.Attributes["href"].Value;
+                                   
+                                    if (referenceUrl.Contains("resource"))
+                                    {
+                                        if (!courseFilesList.Exists(x => x.getFileName() == getFileName(referenceUrl)))
+                                        {
+
+                                            CourseFile cf = new CourseFile();
+                                            cf.setFileLink(referenceUrl);
+                                            cf.setFileName(getFileName(referenceUrl));
+                                            courseFilesList.Add(cf);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        
+                        /*
+                        */
                     }
+
+
+
+
+
+
 
                 }
                 courseFileDict.Add(courseList[i], courseFilesList);
-
+                
             }
         }
 
@@ -300,7 +313,6 @@ namespace MoodleDownloader
             {
                 int getCountOfCharacter = filename.IndexOf("=");
                 filename = filename.Remove(0, getCountOfCharacter + 1);
-                Console.WriteLine(filename);
             }
 
             if (!filename.Contains(".pdf"))
@@ -313,8 +325,16 @@ namespace MoodleDownloader
         }
         private static String getFileName(String url)
         {
+            String filename = String.Empty;
             int pos = url.LastIndexOf("/") + 1;
-            return url.Substring(pos, url.Length - pos);
+            filename = url.Substring(pos, url.Length - pos);
+           
+            if (filename.Contains("view.php?id="))
+            {
+                filename = filename.Remove(0, 12);
+                filename += ".pdf";
+            }
+            return filename;
         }
 
         private HtmlAgilityPack.HtmlDocument getHtmlDoc(String link)
